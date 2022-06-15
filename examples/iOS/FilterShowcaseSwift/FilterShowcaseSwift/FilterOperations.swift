@@ -128,7 +128,7 @@ let filterOperations: Array<FilterOperationInterface> = [
         titleName:"Transform (2-D)",
         sliderConfiguration:.Enabled(minimumValue:0.0, maximumValue:6.28, initialValue:0.75),
         sliderUpdateCallback:{(filter, sliderValue) in
-            filter.affineTransform = CGAffineTransformMakeRotation(sliderValue)
+            filter.affineTransform = CGAffineTransform(rotationAngle: sliderValue)
         },
         filterOperationType:.SingleInput
     ),
@@ -151,7 +151,7 @@ let filterOperations: Array<FilterOperationInterface> = [
         titleName:"Crop",
         sliderConfiguration:.Enabled(minimumValue:0.2, maximumValue:1.0, initialValue:0.25),
         sliderUpdateCallback:{(filter, sliderValue) in
-            filter.cropRegion = CGRectMake(0.0, 0.0, 1.0, sliderValue)
+            filter.cropRegion = CGRect(x: 0.0, y: 0.0, width: 1.0, height: sliderValue)
         },
         filterOperationType:.SingleInput
     ),
@@ -169,8 +169,8 @@ let filterOperations: Array<FilterOperationInterface> = [
 #endif
             let inputPicture = GPUImagePicture(image:inputImage)
             camera.addTarget(filter)
-            inputPicture.addTarget(filter)
-            inputPicture.processImage()
+            inputPicture?.addTarget(filter)
+            inputPicture?.processImage()
             filter.addTarget(outputView)
             filter.setBackgroundColorRed(0.0, green:1.0, blue:0.0, alpha:1.0)
             return (filter, inputPicture)
@@ -191,7 +191,7 @@ let filterOperations: Array<FilterOperationInterface> = [
         sliderConfiguration:.Enabled(minimumValue:0.0, maximumValue:1.0, initialValue:0.5),
         sliderUpdateCallback: {(filter, sliderValue) in
 #if os(iOS)
-            filter.blueControlPoints = ([NSValue(CGPoint:CGPointMake(0.0, 0.0)), NSValue(CGPoint:CGPointMake(0.5, sliderValue)), NSValue(CGPoint:CGPointMake(1.0, 0.75))])
+            filter.blueControlPoints = ([NSValue(cgPoint:CGPoint(x: 0.0, y: 0.0)), NSValue(cgPoint:CGPoint(x: 0.5, y: sliderValue)), NSValue(cgPoint:CGPoint(x: 1.0, y: 0.75))])
 #else
             filter.blueControlPoints = ([NSValue(point:NSMakePoint(0.0, 0.0)), NSValue(point:NSMakePoint(0.5, sliderValue)), NSValue(point:NSMakePoint(1.0, 0.75))])
 #endif
@@ -271,10 +271,10 @@ let filterOperations: Array<FilterOperationInterface> = [
             let filter = GPUImageHistogramFilter()
             let gammaFilter = GPUImageGammaFilter()
             let histogramGraph = GPUImageHistogramGenerator()
-            histogramGraph.forceProcessingAtSize(CGSizeMake(256.0, 330.0))
+            histogramGraph.forceProcessing(at: CGSize(width: 256.0, height: 330.0))
             let blendFilter = GPUImageAlphaBlendFilter()
             blendFilter.mix = 0.75
-            blendFilter.forceProcessingAtSize(CGSizeMake(256.0, 330.0))
+            blendFilter.forceProcessing(at: CGSize(width: 256.0, height: 330.0))
 
             camera.addTarget(gammaFilter)
             gammaFilter.addTarget(filter)
@@ -293,7 +293,7 @@ let filterOperations: Array<FilterOperationInterface> = [
         filterOperationType:.Custom(filterSetupFunction:{(camera, outputView) in
             let filter = GPUImageAverageColor()
             let colorGenerator = GPUImageSolidColorGenerator()
-            colorGenerator.forceProcessingAtSize(outputView.sizeInPixels)
+            colorGenerator.forceProcessing(at: outputView.sizeInPixels)
             
             filter.colorAverageProcessingFinishedBlock = {(redComponent, greenComponent, blueComponent, alphaComponent, frameTime) in
                 colorGenerator.setColorRed(redComponent, green:greenComponent, blue:blueComponent, alpha:alphaComponent)
@@ -313,7 +313,7 @@ let filterOperations: Array<FilterOperationInterface> = [
         filterOperationType:.Custom(filterSetupFunction:{(camera, outputView) in
             let filter = GPUImageLuminosity()
             let colorGenerator = GPUImageSolidColorGenerator()
-            colorGenerator.forceProcessingAtSize(outputView.sizeInPixels)
+            colorGenerator.forceProcessing(at: outputView.sizeInPixels)
             
             filter.luminosityProcessingFinishedBlock = {(luminosity, frameTime) in
                 colorGenerator.setColorRed(luminosity, green:luminosity, blue:luminosity, alpha:luminosity)
@@ -375,7 +375,7 @@ let filterOperations: Array<FilterOperationInterface> = [
         titleName:"Polar Pixellate",
         sliderConfiguration:.Enabled(minimumValue:-0.1, maximumValue:0.1, initialValue:0.05),
         sliderUpdateCallback: {(filter, sliderValue) in
-            filter.pixelSize = CGSizeMake(sliderValue, sliderValue)
+            filter.pixelSize = CGSize(width: sliderValue, height: sliderValue)
         },
         filterOperationType:.SingleInput
     ),
@@ -470,16 +470,16 @@ let filterOperations: Array<FilterOperationInterface> = [
             
             let crosshairGenerator = GPUImageCrosshairGenerator()
             crosshairGenerator.crosshairWidth = 15.0
-            crosshairGenerator.forceProcessingAtSize(outputView.sizeInPixels)
+            crosshairGenerator.forceProcessing(at: outputView.sizeInPixels)
             
-            filter.cornersDetectedBlock = { (cornerArray:UnsafeMutablePointer<GLfloat>, cornersDetected:UInt, frameTime:CMTime) in
-                crosshairGenerator.renderCrosshairsFromArray(cornerArray, count:cornersDetected, frameTime:frameTime)
+            filter.cornersDetectedBlock = { ( cornerArray, cornersDetected, frameTime) in
+                crosshairGenerator.renderCrosshairs(fromArray: cornerArray, count:cornersDetected, frameTime:frameTime)
             }
             
             camera.addTarget(filter)
             
             let blendFilter = GPUImageAlphaBlendFilter()
-            blendFilter.forceProcessingAtSize(outputView.sizeInPixels)
+            blendFilter.forceProcessing(at: outputView.sizeInPixels)
             let gammaFilter = GPUImageGammaFilter()
             camera.addTarget(gammaFilter)
             gammaFilter.addTarget(blendFilter)
@@ -502,16 +502,16 @@ let filterOperations: Array<FilterOperationInterface> = [
             
             let crosshairGenerator = GPUImageCrosshairGenerator()
             crosshairGenerator.crosshairWidth = 15.0
-            crosshairGenerator.forceProcessingAtSize(outputView.sizeInPixels)
+            crosshairGenerator.forceProcessing(at: outputView.sizeInPixels)
             
-            filter.cornersDetectedBlock = { (cornerArray:UnsafeMutablePointer<GLfloat>, cornersDetected:UInt, frameTime:CMTime) in
-                crosshairGenerator.renderCrosshairsFromArray(cornerArray, count:cornersDetected, frameTime:frameTime)
+            filter.cornersDetectedBlock = { ( cornerArray, cornersDetected, frameTime) in
+                crosshairGenerator.renderCrosshairs(fromArray: cornerArray, count:cornersDetected, frameTime:frameTime)
             }
             
             camera.addTarget(filter)
             
             let blendFilter = GPUImageAlphaBlendFilter()
-            blendFilter.forceProcessingAtSize(outputView.sizeInPixels)
+            blendFilter.forceProcessing(at: outputView.sizeInPixels)
             let gammaFilter = GPUImageGammaFilter()
             camera.addTarget(gammaFilter)
             gammaFilter.addTarget(blendFilter)
@@ -534,16 +534,16 @@ let filterOperations: Array<FilterOperationInterface> = [
             
             let crosshairGenerator = GPUImageCrosshairGenerator()
             crosshairGenerator.crosshairWidth = 15.0
-            crosshairGenerator.forceProcessingAtSize(outputView.sizeInPixels)
+            crosshairGenerator.forceProcessing(at: outputView.sizeInPixels)
             
-            filter.cornersDetectedBlock = { (cornerArray:UnsafeMutablePointer<GLfloat>, cornersDetected:UInt, frameTime:CMTime) in
-                crosshairGenerator.renderCrosshairsFromArray(cornerArray, count:cornersDetected, frameTime:frameTime)
+            filter.cornersDetectedBlock = { (cornerArray, cornersDetected, frameTime) in
+                crosshairGenerator.renderCrosshairs(fromArray: cornerArray, count:cornersDetected, frameTime:frameTime)
             }
             
             camera.addTarget(filter)
             
             let blendFilter = GPUImageAlphaBlendFilter()
-            blendFilter.forceProcessingAtSize(outputView.sizeInPixels)
+            blendFilter.forceProcessing(at: outputView.sizeInPixels)
             let gammaFilter = GPUImageGammaFilter()
             camera.addTarget(gammaFilter)
             gammaFilter.addTarget(blendFilter)
@@ -566,17 +566,17 @@ let filterOperations: Array<FilterOperationInterface> = [
             
             let lineGenerator = GPUImageLineGenerator()
             
-            lineGenerator.forceProcessingAtSize(outputView.sizeInPixels)
+            lineGenerator.forceProcessing(at: outputView.sizeInPixels)
             lineGenerator.setLineColorRed(1.0, green:0.0, blue:0.0)
             
-            filter.linesDetectedBlock = { (lineArray:UnsafeMutablePointer<GLfloat>, linesDetected:UInt, frameTime:CMTime) in
-                lineGenerator.renderLinesFromArray(lineArray, count:linesDetected, frameTime:frameTime)
+            filter.linesDetectedBlock = { (lineArray, linesDetected, frameTime) in
+                lineGenerator.renderLines(fromArray: lineArray, count:linesDetected, frameTime:frameTime)
             }
             
             camera.addTarget(filter)
             
             let blendFilter = GPUImageAlphaBlendFilter()
-            blendFilter.forceProcessingAtSize(outputView.sizeInPixels)
+            blendFilter.forceProcessing(at: outputView.sizeInPixels)
             let gammaFilter = GPUImageGammaFilter()
             camera.addTarget(gammaFilter)
             gammaFilter.addTarget(blendFilter)
@@ -746,8 +746,8 @@ let filterOperations: Array<FilterOperationInterface> = [
             let blendImage = GPUImagePicture(image: inputImage)
 
             camera.addTarget(filter)
-            blendImage.addTarget(blendFilter)
-            blendImage.processImage()
+            blendImage?.addTarget(blendFilter)
+            blendImage?.processImage()
             filter.addTarget(blendFilter)
             blendFilter.addTarget(outputView)
             return (filter, blendImage)
@@ -983,13 +983,13 @@ let filterOperations: Array<FilterOperationInterface> = [
 #endif
             let voronoiPointImage = GPUImagePicture(image:voronoiPoints)
 
-            filter.sizeInPixels = CGSizeMake(1024.0, 1024.0)
-            consumerFilter.sizeInPixels = CGSizeMake(1024.0, 1024.0)
+            filter.sizeInPixels = CGSize(width: 1024.0, height: 1024.0)
+            consumerFilter.sizeInPixels = CGSize(width: 1024.0, height: 1024.0)
             
-            voronoiPointImage.addTarget(filter)
+            voronoiPointImage?.addTarget(filter)
             camera.addTarget(consumerFilter)
             filter.addTarget(consumerFilter)
-            voronoiPointImage.processImage()
+            voronoiPointImage?.processImage()
             
             consumerFilter.addTarget(outputView)
             return (filter, voronoiPointImage)
@@ -1000,7 +1000,7 @@ let filterOperations: Array<FilterOperationInterface> = [
         titleName:"Mosaic",
         sliderConfiguration:.Enabled(minimumValue:0.002, maximumValue:0.05, initialValue:0.025),
         sliderUpdateCallback:{(filter, sliderValue) in
-            filter.displayTileSize = CGSizeMake(sliderValue, sliderValue)
+            filter.displayTileSize = CGSize(width: sliderValue, height: sliderValue)
         },
         filterOperationType:.Custom(filterSetupFunction:{(camera, outputView) in
             let filter = GPUImageMosaicFilter()
