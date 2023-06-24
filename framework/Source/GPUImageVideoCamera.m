@@ -92,8 +92,8 @@ void setColorConversion709( GLfloat conversionMatrix[9] )
     
 	// Grab the back-facing or front-facing camera
     _inputCamera = nil;
-	NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-	for (AVCaptureDevice *device in devices) 
+    NSArray *devices = [GPUImageVideoCamera getCameraDevicesAt:cameraPosition];
+	for (AVCaptureDevice *device in devices)
 	{
 		if ([device position] == cameraPosition)
 		{
@@ -381,7 +381,7 @@ void setColorConversion709( GLfloat conversionMatrix[9] )
     }
     
     AVCaptureDevice *backFacingCamera = nil;
-    NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    NSArray *devices = [GPUImageVideoCamera getCameraDevicesAt:AVCaptureDevicePositionUnspecified];
 	for (AVCaptureDevice *device in devices) 
 	{
 		if ([device position] == currentCameraPosition)
@@ -420,7 +420,7 @@ void setColorConversion709( GLfloat conversionMatrix[9] )
 
 + (BOOL)isBackFacingCameraPresent;
 {
-	NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    NSArray *devices = [self getCameraDevicesAt:AVCaptureDevicePositionUnspecified];
 	
 	for (AVCaptureDevice *device in devices)
 	{
@@ -438,7 +438,7 @@ void setColorConversion709( GLfloat conversionMatrix[9] )
 
 + (BOOL)isFrontFacingCameraPresent;
 {
-	NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    NSArray *devices = [self getCameraDevicesAt:AVCaptureDevicePositionUnspecified];
 	
 	for (AVCaptureDevice *device in devices)
 	{
@@ -863,6 +863,13 @@ void setColorConversion709( GLfloat conversionMatrix[9] )
 {
     numberOfFramesCaptured = 0;
     totalFrameTimeDuringCapture = 0.0;
+}
+
+#pragma mark -
+#pragma mark AVCaptureDeviceDiscoverySession
++ (NSArray<AVCaptureDevice *> *)getCameraDevicesAt:(AVCaptureDevicePosition)cameraPosition {
+    AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] mediaType:AVMediaTypeVideo position:cameraPosition];
+    return session.devices?:@[];
 }
 
 #pragma mark -

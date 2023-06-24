@@ -44,7 +44,7 @@ void GPUImageCreateResizedSampleBuffer(CVPixelBufferRef cameraFrame, CGSize fina
 
 @interface GPUImageStillCamera ()
 {
-    AVCaptureStillImageOutput *photoOutput;
+    AVCapturePhotoOutput *photoOutput;
 }
 
 // Methods calling this are responsible for calling dispatch_semaphore_signal(frameRenderingSemaphore) somewhere inside the block
@@ -77,14 +77,14 @@ void GPUImageCreateResizedSampleBuffer(CVPixelBufferRef cameraFrame, CGSize fina
     
     [self.captureSession beginConfiguration];
     
-    photoOutput = [[AVCaptureStillImageOutput alloc] init];
+    photoOutput = [[AVCapturePhotoOutput alloc] init];
    
     // Having a still photo input set to BGRA and video to YUV doesn't work well, so since I don't have YUV resizing for iPhone 4 yet, kick back to BGRA for that device
 //    if (captureAsYUV && [GPUImageContext supportsFastTextureUpload])
     if (captureAsYUV && [GPUImageContext deviceSupportsRedTextures])
     {
         BOOL supportsFullYUVRange = NO;
-        NSArray *supportedPixelFormats = photoOutput.availableImageDataCVPixelFormatTypes;
+        NSArray *supportedPixelFormats = photoOutput.availablePhotoPixelFormatTypes;
         for (NSNumber *currentPixelFormat in supportedPixelFormats)
         {
             if ([currentPixelFormat intValue] == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)
@@ -95,17 +95,23 @@ void GPUImageCreateResizedSampleBuffer(CVPixelBufferRef cameraFrame, CGSize fina
         
         if (supportsFullYUVRange)
         {
-            [photoOutput setOutputSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+            AVCapturePhotoSettings *setting = [AVCapturePhotoSettings photoSettingsWithFormat:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+            [photoOutput setPreparedPhotoSettingsArray:@[setting] completionHandler:nil];
+//            [photoOutput setOutputSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
         }
         else
         {
-            [photoOutput setOutputSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+            AVCapturePhotoSettings *setting = [AVCapturePhotoSettings photoSettingsWithFormat:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+            [photoOutput setPreparedPhotoSettingsArray:@[setting] completionHandler:nil];
+//            [photoOutput setOutputSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
         }
     }
     else
     {
         captureAsYUV = NO;
-        [photoOutput setOutputSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+        AVCapturePhotoSettings *setting = [AVCapturePhotoSettings photoSettingsWithFormat:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+        [photoOutput setPreparedPhotoSettingsArray:@[setting] completionHandler:nil];
+//        [photoOutput setOutputSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
         [videoOutput setVideoSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
     }
     
@@ -280,6 +286,7 @@ void GPUImageCreateResizedSampleBuffer(CVPixelBufferRef cameraFrame, CGSize fina
         return;
     }
 
+    photoOutput capturePhotoWithSettings:<#(nonnull AVCapturePhotoSettings *)#> delegate:<#(nonnull id<AVCapturePhotoCaptureDelegate>)#>
     [photoOutput captureStillImageAsynchronouslyFromConnection:[[photoOutput connections] objectAtIndex:0] completionHandler:^(CMSampleBufferRef imageSampleBuffer, NSError *error) {
         if(imageSampleBuffer == NULL){
             block(error);
